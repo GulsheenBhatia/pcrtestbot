@@ -1,4 +1,4 @@
-import {RapidTestOrder} from "./RapidTestOrder.js";
+import {IndianTakeoutOrder} from "./IndianTakeoutOrder.js";
 import express from 'express';
 
 const app = express();
@@ -8,28 +8,28 @@ const port = process.env.PORT || parseInt(process.argv.pop()) || 3002;
 
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static("www"));
-let oOrders = {};
+let orders = {};
+
 app.post("/sms", (req, res) => {
-  // turn taking SMS
-  let sFrom = req.body.From || req.body.from;
-  if (!oOrders.hasOwnProperty(sFrom)) {
-    oOrders[sFrom] = new RapidTestOrder(sFrom);
+  let senderNumber = req.body.From || req.body.from;
+  if (!orders.hasOwnProperty(senderNumber)) {
+    orders[senderNumber] = new IndianTakeoutOrder(senderNumber);
   }
-  let sMessage = req.body.Body || req.body.body;
-  let aReply = oOrders[sFrom].handleInput(sMessage);
+  let message = req.body.Body || req.body.body;
+  let reply = orders[senderNumber].handleInput(message);
   res.setHeader('content-type', 'text/xml');
-  let sResponse = "<Response>";
-  for (let n = 0; n < aReply.length; n++) {
-    sResponse += "<Message>";
-    sResponse += aReply[n];
-    sResponse += "</Message>";
+  let response = "<Response>";
+  for (let i = 0; i < reply.length; i++) {
+    response += "<Message>";
+    response += reply[i];
+    response += "</Message>";
   }
-  res.end(sResponse + "</Response>");
-  if (oOrders[sFrom].isDone) {
-    delete oOrders[sFrom];
+  res.end(response + "</Response>");
+  if (orders[senderNumber].isOrderComplete()) {
+    delete orders[senderNumber];
   }
 });
 
 const server = app.listen(port, () => {
-  console.log(`Example app listening on port ${server.address().port}`)
-})
+  console.log(`Server listening on port ${server.address().port}`);
+});
